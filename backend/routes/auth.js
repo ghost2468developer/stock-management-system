@@ -1,42 +1,73 @@
 const express = require('express')
 const fs = require('fs')
-const crypto = require('crypto')
+const path = require('path')
 const router = express.Router()
 
-const USERS_FILE = './backend/data/users.json'
+// Paths
+const dataDir = path.join(__dirname, '../data')
+const usersFilePath = path.join(dataDir, 'users.json')
 
-// Helpers
+// Ensure data directory exists
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
+}
+
+// Ensure users.json file exists and contains valid JSON
+try {
+    const fileContent = fs.existsSync(usersFilePath) ? fs.readFileSync(usersFilePath, 'utf-8') : ''
+    if (!fileContent.trim()) {
+        fs.writeFileSync(usersFilePath, '[]')
+    } else {
+        JSON.parse(fileContent)
+    }
+} catch (err) {
+    fs.writeFileSync(usersFilePath, '[]') // reset file if corrupt
+}
+
+// Load users safely
 function loadUsers() {
-  if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]')
-  return JSON.parse(fs.readFileSync(USERS_FILE))
+    try {
+        const data = fs.readFileSync(usersFilePath, 'utf-8')
+        return data ? JSON.parse(data) : []
+    } catch (error) {
+        console.error('Error reading users.json:', error)
+        return []
+    }
 }
 
+// Save users
 function saveUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2))
+    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2))
 }
 
-// POST /api/auth/register
+// Register route
 router.post('/register', (req, res) => {
-  const { username, password } = req.body
-  const users = loadUsers()
-  if (users.find(u => u.username === username)) {
-    return res.status(400).json({ message: 'Username already exists' })
-  }
-  const hashed = crypto.createHash('sha256').update(password).digest('hex')
-  const user = { id: Date.now(), username, password: hashed }
-  users.push(user)
-  saveUsers(users)
-  res.json({ message: 'User registered successfully' })
+    const { username, password } = req.body
+    const users = loadUsers()
+
+    const existingUser = users.find(user => user.username === username)
+    if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' })
+    }
+
+    const newUser = { username, password }
+    users.push(newUser)
+    saveUsers(users)
+
+    res.status(201).json({ message: 'User registered successfully' })
 })
 
-// POST /api/auth/login
+// Login route
 router.post('/login', (req, res) => {
-  const { username, password } = req.body
-  const users = loadUsers()
-  const hashed = crypto.createHash('sha256').update(password).digest('hex')
-  const user = users.find(u => u.username === username && u.password === hashed)
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' })
-  res.json({ message: 'Login successful', userId: user.id })
+    const { username, password } = req.body
+    const users = loadUsers()
+
+    const user = users.find(u => u.username === username && u.password === password)
+    if (!user) {
+        return res.status(401).json({ message: 'Invalid credentials' })
+    }
+
+    res.status(200).json({ message: 'Login successful' })
 })
 
 module.exports = router
