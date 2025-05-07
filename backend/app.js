@@ -8,7 +8,7 @@ const app = express()
 app.use(cors())
 app.use(bodyParser.json())
 
-app.use('./api/auth', authRoutes)
-app.use('./api/stock', stockRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/stock', stockRoutes)
 
 module.exports = app
