@@ -15,5 +15,10 @@
     </form>
     <div id="products"></div>
     <script src="script.js"></script>
+    <script>
+        if (!localStorage.getItem('userId')) {
+          window.location.href = 'login.html';
+        }
+    </script>
 </body>
 </html>

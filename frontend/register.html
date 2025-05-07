@@ -14,5 +14,10 @@
         <p>Already have an account? <a href="login.html">Login here</a></p>
     </form>
     <script src="script.js"></script>
+    <script>
+        if (localStorage.getItem('userId')) {
+          window.location.href = 'dashboard.html';
+        }
+    </script>  
 </body>
 </html>

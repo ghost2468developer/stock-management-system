@@ -14,5 +14,10 @@
         <p>Don't have an account? <a href="register.html">Register</a></p>
     </form>
     <script src="script.js"></script>
+    <script>
+        if (localStorage.getItem('userId')) {
+          window.location.href = 'dashboard.html';
+        }
+    </script>  
 </body>
 </html>
